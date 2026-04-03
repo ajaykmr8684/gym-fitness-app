@@ -32,66 +32,6 @@ export const Dashboard = () => {
   return (
     <div style={{display: 'flex', flexDirection: 'column', gap: '1.5rem'}}>
       {/* Professional Header - Company Name with Seed Button */}
-      <div style={{
-        background: 'linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%)',
-        color: 'white',
-        padding: '2.5rem 2rem',
-        borderRadius: '12px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        boxShadow: '0 4px 15px rgba(14, 165, 233, 0.2)'
-      }}>
-        <div style={{fontSize: '2.8rem', fontWeight: '800', letterSpacing: '-0.5px', textShadow: '0 2px 4px rgba(0,0,0,0.1)'}}>Shri Ram Fitness</div>
-        {members.length === 0 && (
-          <button
-            onClick={handleSeedData}
-            disabled={seeding}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.75rem 1.25rem',
-              backgroundColor: 'rgba(255, 255, 255, 0.25)',
-              border: '2px solid rgba(255, 255, 255, 0.5)',
-              borderRadius: '8px',
-              color: 'white',
-              fontWeight: '600',
-              fontSize: '0.9rem',
-              cursor: seeding ? 'not-allowed' : 'pointer',
-              opacity: seeding ? 0.7 : 1,
-              transition: 'all 200ms',
-              backdropFilter: 'blur(10px)'
-            }}
-            onMouseEnter={(e) => {
-              if (!seeding) {
-                (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255, 255, 255, 0.35)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(255, 255, 255, 0.25)';
-            }}
-          >
-            <Database size={18} />
-            {seeding ? 'Seeding...' : 'Load Demo Data'}
-          </button>
-        )}
-      </div>
-
-      {/* Seed Message */}
-      {seedMessage && (
-        <div style={{
-          padding: '1rem',
-          backgroundColor: seedMessage.includes('Error') ? '#fee2e2' : '#dcfce7',
-          border: `1px solid ${seedMessage.includes('Error') ? '#fca5a5' : '#86efac'}`,
-          borderRadius: '8px',
-          color: seedMessage.includes('Error') ? '#991b1b' : '#166534',
-          fontSize: '0.9rem',
-          fontWeight: '500'
-        }}>
-          {seedMessage}
-        </div>
-      )}
 
       {/* Stats Cards - Fully Horizontal - ALL IN ONE ROW */}
       <div style={{display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem'}}>

@@ -1,10 +1,16 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { Users, FileText, Clock, Menu, X, BarChart3, Dumbbell } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Users, FileText, Clock, Menu, X, BarChart3, Dumbbell, LogOut, User } from 'lucide-react';
 import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const navigate = useNavigate();
+  const { logout, currentUsername } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    setMobileMenuOpen(false);
+  };
 
   return (
     <>
@@ -57,6 +63,36 @@ export const Header = () => {
             <NavLink to="/members" icon={Users} label="Members" />
             <NavLink to="/billing" icon={FileText} label="Billing" />
             <NavLink to="/reminders" icon={Clock} label="Reminders" />
+            <button
+              onClick={handleLogout}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                padding: '0.55rem 0.75rem',
+                marginLeft: '0.4rem',
+                borderRadius: '6px',
+                border: '1px solid #475569',
+                background: 'rgba(15, 23, 42, 0.3)',
+                color: '#e2e8f0',
+                fontWeight: 600,
+                fontSize: '0.82rem',
+                cursor: 'pointer',
+                transition: 'all 200ms',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.borderColor = '#0ea5e9';
+                (e.currentTarget as HTMLElement).style.color = '#7dd3fc';
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.borderColor = '#475569';
+                (e.currentTarget as HTMLElement).style.color = '#e2e8f0';
+              }}
+            >
+              <User size={14} />
+              <span>{currentUsername || 'User'}</span>
+              <LogOut size={14} />
+            </button>
           </nav>
 
           <button
@@ -103,6 +139,24 @@ export const Header = () => {
               label="Reminders"
               onClick={() => setMobileMenuOpen(false)}
             />
+            <button
+              onClick={handleLogout}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                padding: '0.75rem 1rem',
+                background: 'rgba(239, 68, 68, 0.14)',
+                border: '1px solid rgba(239, 68, 68, 0.35)',
+                borderRadius: '6px',
+                color: '#fecaca',
+                fontWeight: '600',
+                cursor: 'pointer',
+              }}
+            >
+              <LogOut size={20} />
+              <span>Logout ({currentUsername || 'User'})</span>
+            </button>
           </nav>
         )}
       </header>
