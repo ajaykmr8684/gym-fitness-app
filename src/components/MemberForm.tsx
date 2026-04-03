@@ -2,14 +2,17 @@ import { useState, useMemo } from 'react';
 import { Member } from '../types';
 import { membershipPlans, calculateExpiryDate, calculateMembershipPrice, basePricing } from '../utils/db';
 import { CheckCircle } from 'lucide-react';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface MemberFormProps {
   member?: Member;
-  onSubmit: (data: Omit<Member, 'id'>) => void;
+  onSubmit: (data: Omit<Member, 'id'>) => void | Promise<void>;
   onCancel: () => void;
 }
 
 export const MemberForm = ({ member, onSubmit, onCancel }: MemberFormProps) => {
+  const isMobile = useIsMobile();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: member?.name || '',
     email: member?.email || '',
@@ -30,30 +33,36 @@ export const MemberForm = ({ member, onSubmit, onCancel }: MemberFormProps) => {
 
   const plan = membershipPlans.find(p => p.type === formData.planType);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     
-    const expiryDate = calculateExpiryDate(plan?.duration || 30);
+    try {
+      const expiryDate = calculateExpiryDate(plan?.duration || 30);
 
-    onSubmit({
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      planType: formData.planType,
-      planDuration: plan?.duration || 30,
-      strength: formData.strength,
-      cardio: formData.cardio,
-      training: formData.training,
-      baseAmount: pricing.baseAmount,
-      discountPercentage: pricing.discountPercentage,
-      amount: pricing.finalAmount,
-      amountPaid: member?.amountPaid || 0,
-      joinDate: formData.joinDate,
-      expiryDate: expiryDate,
-      status: 'active',
-      notes: formData.notes,
-      whatsappOptIn: formData.whatsappOptIn,
-    });
+      await onSubmit({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        planType: formData.planType,
+        planDuration: plan?.duration || 30,
+        strength: formData.strength,
+        cardio: formData.cardio,
+        training: formData.training,
+        baseAmount: pricing.baseAmount,
+        discountPercentage: pricing.discountPercentage,
+        amount: pricing.finalAmount,
+        amountPaid: member?.amountPaid || 0,
+        joinDate: formData.joinDate,
+        expiryDate: expiryDate,
+        status: 'active',
+        notes: formData.notes,
+        whatsappOptIn: formData.whatsappOptIn,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -68,13 +77,13 @@ export const MemberForm = ({ member, onSubmit, onCancel }: MemberFormProps) => {
           required
           value={formData.name}
           onChange={e => setFormData({ ...formData, name: e.target.value })}
-          placeholder="John Doe"
+          placeholder=""
           style={{width: '100%', padding: '0.75rem 1rem', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.95rem'}}
         />
       </div>
 
       {/* Email and Phone */}
-      <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem'}}>
+      <div style={{display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1rem'}}>
         <div>
           <label style={{display: 'block', fontSize: '0.9rem', fontWeight: '600', color: '#1e293b', marginBottom: '0.5rem'}}>
             Email <span style={{color: '#0ea5e9'}}>*</span>
@@ -84,7 +93,7 @@ export const MemberForm = ({ member, onSubmit, onCancel }: MemberFormProps) => {
             required
             value={formData.email}
             onChange={e => setFormData({ ...formData, email: e.target.value })}
-            placeholder="john@example.com"
+            placeholder=""
             style={{width: '100%', padding: '0.75rem 1rem', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.95rem'}}
           />
         </div>
@@ -97,7 +106,7 @@ export const MemberForm = ({ member, onSubmit, onCancel }: MemberFormProps) => {
             required
             value={formData.phone}
             onChange={e => setFormData({ ...formData, phone: e.target.value })}
-            placeholder="+91 98765 43210"
+            placeholder=""
             style={{width: '100%', padding: '0.75rem 1rem', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.95rem'}}
           />
         </div>
@@ -108,7 +117,7 @@ export const MemberForm = ({ member, onSubmit, onCancel }: MemberFormProps) => {
         <label style={{display: 'block', fontSize: '0.9rem', fontWeight: '600', color: '#1e293b', marginBottom: '0.75rem'}}>
           Plan Duration <span style={{color: '#0ea5e9'}}>*</span>
         </label>
-        <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem'}}>
+        <div style={{display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '0.75rem'}}>
           {membershipPlans.map(plan => (
             <button
               key={plan.type}
@@ -145,7 +154,7 @@ export const MemberForm = ({ member, onSubmit, onCancel }: MemberFormProps) => {
         <label style={{display: 'block', fontSize: '0.9rem', fontWeight: '600', color: '#1e293b', marginBottom: '0.75rem'}}>
           Features <span style={{color: '#0ea5e9'}}>*</span>
         </label>
-        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem'}}>
+        <div style={{display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: '0.75rem'}}>
           {/* Strength */}
           <div
             onClick={() => setFormData({ ...formData, strength: !formData.strength })}
@@ -285,39 +294,45 @@ export const MemberForm = ({ member, onSubmit, onCancel }: MemberFormProps) => {
         <textarea
           value={formData.notes}
           onChange={e => setFormData({ ...formData, notes: e.target.value })}
-          placeholder="Any special requirements or notes..."
+          placeholder=""
           rows={3}
           style={{width: '100%', padding: '0.75rem 1rem', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.95rem', resize: 'vertical', fontFamily: 'inherit'}}
         />
       </div>
 
       {/* Action Buttons */}
-      <div style={{display: 'flex', gap: '1rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0', marginTop: 'auto'}}>
+      <div style={{display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '1rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0', marginTop: 'auto'}}>
         <button
           type="submit"
+          disabled={isSubmitting}
           style={{
             flex: 1,
             padding: '0.85rem 1.5rem',
-            background: 'linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%)',
+            background: isSubmitting
+              ? 'linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%)'
+              : 'linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%)',
             color: 'white',
             border: 'none',
             borderRadius: '6px',
             fontSize: '0.95rem',
             fontWeight: '600',
-            cursor: 'pointer',
+            cursor: isSubmitting ? 'not-allowed' : 'pointer',
             transition: 'all 200ms',
-            boxShadow: '0 2px 4px rgba(14, 165, 233, 0.2)'
+            boxShadow: '0 2px 4px rgba(14, 165, 233, 0.2)',
+            opacity: isSubmitting ? 0.8 : 1
           }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 8px rgba(14, 165, 233, 0.3)';
-            (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
+            if (!isSubmitting) {
+              (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 8px rgba(14, 165, 233, 0.3)';
+              (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
+            }
           }}
           onMouseLeave={(e) => {
             (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 4px rgba(14, 165, 233, 0.2)';
             (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
           }}
         >
-          {member ? '✓ Update Member' : '+ Add Member'}
+          {isSubmitting ? 'Saving...' : member ? '✓ Update Member' : '+ Add Member'}
         </button>
         <button
           type="button"

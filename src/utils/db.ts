@@ -161,12 +161,12 @@ export const calculateMembershipPrice = (
   }
 
   // Calculate base amount for the duration (before discount)
-  const baseAmount = monthlyAmount * plan.multiplier;
+  const baseAmount = Math.round(monthlyAmount * plan.multiplier);
   
   // Apply discount with proper rounding
   const discountPercentage = plan.discount;
   const discountAmount = Math.round(baseAmount * (discountPercentage / 100));
-  const finalAmount = baseAmount - discountAmount;
+  const finalAmount = Math.round(baseAmount - discountAmount);
 
   return { baseAmount, discountPercentage, finalAmount };
 };

@@ -2,10 +2,12 @@ import { Link } from 'react-router-dom';
 import { Users, FileText, Clock, Menu, X, BarChart3, Dumbbell, LogOut, User } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { logout, currentUsername } = useAuth();
+  const isMobile = useIsMobile(900);
 
   const handleLogout = () => {
     logout();
@@ -26,7 +28,7 @@ export const Header = () => {
         <div style={{
           maxWidth: '1200px',
           margin: '0 auto',
-          padding: '1rem 1.5rem',
+          padding: isMobile ? '0.8rem 0.9rem' : '1rem 1.5rem',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center'
@@ -34,7 +36,7 @@ export const Header = () => {
           <Link to="/" style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '1rem',
+            gap: isMobile ? '0.6rem' : '1rem',
             textDecoration: 'none',
             color: 'white',
             transition: 'opacity 200ms',
@@ -45,19 +47,20 @@ export const Header = () => {
           >
             <div style={{
               background: 'linear-gradient(135deg, #0ea5e9, #0369a1)',
-              padding: '0.6rem',
+              padding: isMobile ? '0.45rem' : '0.6rem',
               borderRadius: '10px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <Dumbbell size={28} style={{color: 'white'}} />
+              <Dumbbell size={isMobile ? 20 : 28} style={{color: 'white'}} />
             </div>
             <div style={{display: 'flex', flexDirection: 'column', gap: '0.125rem'}}>
-              <p style={{fontSize: '1.4rem', fontWeight: '800', margin: 0, letterSpacing: '-0.5px'}}>Shri Ram Fitness</p>
+              <p style={{fontSize: isMobile ? '1rem' : '1.4rem', fontWeight: '800', margin: 0, letterSpacing: '-0.5px'}}>Shri Ram Fitness</p>
             </div>
           </Link>
           
+          {!isMobile && (
           <nav style={{display: 'flex', gap: '0.25rem', alignItems: 'center'}}>
             <NavLink to="/dashboard" icon={BarChart3} label="Dashboard" />
             <NavLink to="/members" icon={Users} label="Members" />
@@ -94,9 +97,10 @@ export const Header = () => {
               <LogOut size={14} />
             </button>
           </nav>
+          )}
 
           <button
-            style={{display: 'none', background: 'rgba(14, 165, 233, 0.2)', border: 'none', color: 'white', padding: '0.5rem', borderRadius: '8px', cursor: 'pointer', transition: 'background 200ms'}}
+            style={{display: isMobile ? 'inline-flex' : 'none', background: 'rgba(14, 165, 233, 0.2)', border: 'none', color: 'white', padding: '0.45rem', borderRadius: '8px', cursor: 'pointer', transition: 'background 200ms'}}
             onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(14, 165, 233, 0.3)')}
             onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(14, 165, 233, 0.2)')}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -106,12 +110,12 @@ export const Header = () => {
         </div>
 
         {/* Mobile menu */}
-        {mobileMenuOpen && (
+        {isMobile && mobileMenuOpen && (
           <nav style={{
             display: 'flex',
             flexDirection: 'column',
             gap: '0.5rem',
-            padding: '1rem 1.5rem',
+            padding: '0.75rem 0.9rem',
             borderTop: '1px solid #334155',
             background: 'rgba(15, 23, 42, 0.8)'
           }}>

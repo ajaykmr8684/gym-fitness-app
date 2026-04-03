@@ -1,12 +1,12 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { Header } from './components/Header';
 import { AppProvider } from './context/AppContext';
-import { AuthProvider, useAuth } from './context/AuthContext'
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { Dashboard } from './pages/Dashboard';
 import { Members } from './pages/Members';
 import { Billing } from './pages/Billing';
 import { Reminders } from './pages/Reminders';
-import { Login } from './pages/Login'
+import { Login } from './pages/Login';
 
 const ProtectedRoute = () => {
   const { isAuthenticated } = useAuth();
@@ -24,7 +24,7 @@ const ProtectedLayout = () => {
     <AppProvider>
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <main className="container mx-auto px-4 py-8">
+        <main className="container mx-auto px-2 py-4 sm:px-4 sm:py-6 lg:px-4 lg:py-8">
           <Outlet />
         </main>
       </div>

@@ -5,9 +5,11 @@ import { useAppContext } from '../context/AppContext';
 import { addReminder, updateReminder, formatDate } from '../utils/db';
 import { sendReminderEmail, sendReminderWhatsApp } from '../utils/notifications';
 import { Reminder } from '../types';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 export const Reminders = () => {
   const { members, reminders, refreshData } = useAppContext();
+  const isMobile = useIsMobile();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
@@ -121,19 +123,21 @@ export const Reminders = () => {
   };
 
   return (
-    <div style={{display: 'flex', flexDirection: 'column', gap: '1.5rem'}}>
+    <div style={{display: 'flex', flexDirection: 'column', gap: isMobile ? '1rem' : '1.5rem'}}>
       {/* Professional Header */}
       <div style={{
         background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
         color: 'white',
-        padding: '2rem',
+        padding: isMobile ? '1rem' : '2rem',
         borderRadius: '8px',
         display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: isMobile ? 'flex-start' : 'center',
+        gap: isMobile ? '0.8rem' : 0
       }}>
         <div>
-          <h1 style={{fontSize: '1.75rem', fontWeight: 'bold', marginBottom: '0.25rem'}}>Reminders</h1>
+          <h1 style={{fontSize: isMobile ? '1.35rem' : '1.75rem', fontWeight: 'bold', marginBottom: '0.25rem'}}>Reminders</h1>
           <p style={{fontSize: '0.875rem', color: '#cbd5e1'}}>Send timely notifications to members</p>
         </div>
         <button
@@ -143,6 +147,8 @@ export const Reminders = () => {
             alignItems: 'center',
             gap: '0.5rem',
             padding: '0.85rem 1.5rem',
+            width: isMobile ? '100%' : 'auto',
+            justifyContent: 'center',
             background: 'linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%)',
             color: 'white',
             border: 'none',
@@ -169,7 +175,7 @@ export const Reminders = () => {
       </div>
 
       {/* Summary Cards */}
-      <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem'}}>
+      <div style={{display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(auto-fit, minmax(200px, 1fr))', gap: isMobile ? '0.75rem' : '1rem'}}>
         <div style={{
           background: 'white',
           border: '1px solid #e2e8f0',
@@ -480,7 +486,7 @@ export const Reminders = () => {
                 minHeight: '70px',
                 resize: 'none'
               }}
-              placeholder="Custom message for the reminder"
+              placeholder=""
             />
           </div>
 

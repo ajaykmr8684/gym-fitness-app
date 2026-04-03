@@ -13,7 +13,7 @@ export const sendBillEmail = async (
     );
     
     // Open Gmail compose with pre-filled details
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${memberEmail}&subject=${subject}&body=${body}`;
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${memberEmail}&su=${subject}&body=${body}`;
     window.open(gmailUrl, '_blank');
     
     return true;
@@ -64,12 +64,12 @@ export const sendReminderEmail = async (
   message: string
 ): Promise<boolean> => {
   try {
-    const subject = encodeURIComponent(`Reminder - Shree Ram Fitness Centre`);
+    const subject = encodeURIComponent(`${reminderType} - Shree Ram Fitness Centre`);
     const body = encodeURIComponent(
       `Hello ${memberName},\n\n${message}\n\nIf you have any questions, please contact us.\n\nBest regards,\nShree Ram Fitness Centre\nEmail: shreeramfitnesshamirpur@gmail.com\nPhone: +91-8580521298`
     );
     
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${memberEmail}&subject=${subject}&body=${body}`;
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${memberEmail}&su=${subject}&body=${body}`;
     window.open(gmailUrl, '_blank');
     
     return true;

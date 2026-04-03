@@ -1,16 +1,28 @@
 import { useState } from 'react';
-import { Plus, Mail, MessageCircle, Download, Trash2, Search, FileText, CheckCircle2 } from 'lucide-react';
+import { Plus, Mail, MessageCircle, Download, Trash2, Search, FileText, CheckCircle2, Filter } from 'lucide-react';
 import { Modal } from '../components/Modal';
 import { useAppContext } from '../context/AppContext';
 import { addBill, updateBill, formatDate } from '../utils/db';
 import { sendBillEmail, sendBillWhatsApp } from '../utils/notifications';
 import { generateBillPDF } from '../utils/pdf';
 import { Bill, Member } from '../types';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 export const Billing = () => {
   const { members, bills, refreshData } = useAppContext();
+  const isMobile = useIsMobile();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [processingBillId, setProcessingBillId] = useState<string | null>(null);
+  const [billStatusFilter, setBillStatusFilter] = useState<'all' | 'pending' | 'paid' | 'overdue'>('all');
+
+  const getBillEffectiveStatus = (bill: Bill): 'paid' | 'pending' | 'overdue' => {
+    if (bill.status === 'paid') return 'paid';
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const due = new Date(bill.dueDate); due.setHours(0, 0, 0, 0);
+    return due < today ? 'overdue' : 'pending';
+  };
+
   const [formData, setFormData] = useState({
     memberId: '',
     amount: 0,
@@ -19,10 +31,14 @@ export const Billing = () => {
   });
 
   const selectedMember = members.find(m => m.id === formData.memberId);
-  const filteredBills = bills.filter(b =>
-    b.memberName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    b.memberId.includes(searchTerm)
-  );
+  const filteredBills = bills.filter(b => {
+    const matchesSearch =
+      b.memberName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      b.memberId.includes(searchTerm);
+    if (!matchesSearch) return false;
+    if (billStatusFilter === 'all') return true;
+    return getBillEffectiveStatus(b) === billStatusFilter;
+  });
 
   const handleCreateBill = async () => {
     if (!formData.memberId || !formData.amount) {
@@ -112,16 +128,20 @@ export const Billing = () => {
   };
 
   const markAsPaid = async (bill: Bill) => {
+    if (bill.status === 'paid' || processingBillId === bill.id) return;
+    if (!window.confirm(`Mark bill of ₹${bill.amount} for ${bill.memberName} as paid?`)) return;
+    setProcessingBillId(bill.id);
     try {
       await updateBill(bill.id, { 
         status: 'paid',
         amountPaid: bill.amount
       });
       await refreshData();
-      alert('Bill marked as paid!');
     } catch (error) {
       alert('Error updating bill');
       console.error(error);
+    } finally {
+      setProcessingBillId(null);
     }
   };
 
@@ -133,19 +153,21 @@ export const Billing = () => {
   };
 
   return (
-    <div style={{display: 'flex', flexDirection: 'column', gap: '1.5rem'}}>
+    <div style={{display: 'flex', flexDirection: 'column', gap: isMobile ? '1rem' : '1.5rem'}}>
       {/* Professional Header */}
       <div style={{
         background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
         color: 'white',
-        padding: '2rem',
+        padding: isMobile ? '1rem' : '2rem',
         borderRadius: '8px',
         display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: isMobile ? 'flex-start' : 'center',
+        gap: isMobile ? '0.8rem' : 0
       }}>
         <div>
-          <h1 style={{fontSize: '1.75rem', fontWeight: 'bold', marginBottom: '0.25rem'}}>Billing</h1>
+          <h1 style={{fontSize: isMobile ? '1.35rem' : '1.75rem', fontWeight: 'bold', marginBottom: '0.25rem'}}>Billing</h1>
           <p style={{fontSize: '0.875rem', color: '#cbd5e1'}}>Manage and track member payments</p>
         </div>
         <button
@@ -155,6 +177,8 @@ export const Billing = () => {
             alignItems: 'center',
             gap: '0.5rem',
             padding: '0.85rem 1.5rem',
+            width: isMobile ? '100%' : 'auto',
+            justifyContent: 'center',
             background: 'linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%)',
             color: 'white',
             border: 'none',
@@ -181,7 +205,7 @@ export const Billing = () => {
       </div>
 
       {/* Summary Cards */}
-      <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem'}}>
+      <div style={{display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(auto-fit, minmax(200px, 1fr))', gap: isMobile ? '0.75rem' : '1rem'}}>
         <div style={{
           background: 'white',
           border: '1px solid #e2e8f0',
@@ -211,34 +235,59 @@ export const Billing = () => {
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div style={{position: 'relative'}}>
-        <Search size={18} style={{position: 'absolute', left: '1rem', top: '0.875rem', color: '#94a3b8'}} />
-        <input
-          type="text"
-          placeholder="Search by member name or ID..."
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          style={{
-            width: '100%',
-            paddingLeft: '2.75rem',
-            paddingRight: '1rem',
-            paddingTop: '0.75rem',
-            paddingBottom: '0.75rem',
-            border: '1px solid #cbd5e1',
-            borderRadius: '6px',
-            fontSize: '0.95rem',
-            transition: 'all 200ms'
-          }}
-          onFocus={(e) => {
-            e.currentTarget.style.borderColor = '#0ea5e9';
-            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(14, 165, 233, 0.1)';
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.borderColor = '#cbd5e1';
-            e.currentTarget.style.boxShadow = 'none';
-          }}
-        />
+      {/* Search + Filter */}
+      <div style={{display: 'flex', gap: '0.75rem', alignItems: isMobile ? 'stretch' : 'center', flexDirection: isMobile ? 'column' : 'row'}}>
+        <div style={{position: 'relative', flex: 1}}>
+          <Search size={18} style={{position: 'absolute', left: '1rem', top: '0.875rem', color: '#94a3b8'}} />
+          <input
+            type="text"
+            placeholder="Search by member name or ID..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            style={{
+              width: '100%',
+              paddingLeft: '2.75rem',
+              paddingRight: '1rem',
+              paddingTop: '0.75rem',
+              paddingBottom: '0.75rem',
+              border: '1px solid #cbd5e1',
+              borderRadius: '6px',
+              fontSize: '0.95rem',
+              transition: 'all 200ms'
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = '#0ea5e9';
+              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(14, 165, 233, 0.1)';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = '#cbd5e1';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          />
+        </div>
+        <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0, width: isMobile ? '100%' : 'auto'}}>
+          <Filter size={16} style={{color: '#64748b'}} />
+          <select
+            value={billStatusFilter}
+            onChange={e => setBillStatusFilter(e.target.value as 'all' | 'pending' | 'paid' | 'overdue')}
+            style={{
+              width: isMobile ? '100%' : 'auto',
+              padding: '0.75rem 1rem',
+              border: '1px solid #cbd5e1',
+              borderRadius: '6px',
+              fontSize: '0.9rem',
+              background: 'white',
+              color: '#1e293b',
+              cursor: 'pointer',
+              fontFamily: 'inherit'
+            }}
+          >
+            <option value="all">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="overdue">Overdue</option>
+            <option value="paid">Paid</option>
+          </select>
+        </div>
       </div>
 
       {/* Bills Table */}
@@ -280,17 +329,19 @@ export const Billing = () => {
                     <td style={{padding: '1rem 1.25rem', fontSize: '0.9rem', color: '#64748b'}}>{formatDate(bill.billingDate)}</td>
                     <td style={{padding: '1rem 1.25rem', fontSize: '0.9rem', color: '#64748b'}}>{formatDate(bill.dueDate)}</td>
                     <td style={{padding: '1rem 1.25rem'}}>
-                      <span style={{
-                        display: 'inline-block',
-                        padding: '0.375rem 0.75rem',
-                        background: bill.status === 'paid' ? '#dcfce7' : '#fef3c7',
-                        color: bill.status === 'paid' ? '#166534' : '#92400e',
-                        borderRadius: '4px',
-                        fontSize: '0.85rem',
-                        fontWeight: '600'
-                      }}>
-                        {bill.status === 'paid' ? '● Paid' : '● Pending'}
-                      </span>
+                      {(() => {
+                        const eff = getBillEffectiveStatus(bill);
+                        const cfg = {
+                          paid:    { bg: '#dcfce7', color: '#166534', label: '● Paid' },
+                          pending: { bg: '#fef3c7', color: '#92400e', label: '● Pending' },
+                          overdue: { bg: '#fee2e2', color: '#991b1b', label: '● Overdue' },
+                        }[eff];
+                        return (
+                          <span style={{ display: 'inline-block', padding: '0.375rem 0.75rem', background: cfg.bg, color: cfg.color, borderRadius: '4px', fontSize: '0.85rem', fontWeight: '600' }}>
+                            {cfg.label}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td style={{padding: '1rem 1.25rem'}}>
                       <div style={{display: 'flex', justifyContent: 'center', gap: '0.5rem', flexWrap: 'wrap'}}>
@@ -361,30 +412,51 @@ export const Billing = () => {
                         >
                           <MessageCircle size={14} />
                         </button>
-                        <button
-                          onClick={() => markAsPaid(bill)}
-                          disabled={bill.status === 'paid'}
-                          style={{
-                            padding: '0.5rem 0.75rem',
-                            background: bill.status === 'paid' ? '#dcfce7' : '#fef3c7',
-                            border: 'none',
-                            borderRadius: '6px',
-                            cursor: bill.status === 'paid' ? 'not-allowed' : 'pointer',
-                            color: bill.status === 'paid' ? '#166534' : '#92400e',
-                            fontSize: '0.85rem',
-                            fontWeight: '600',
-                            transition: 'all 200ms',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.375rem',
-                            opacity: bill.status === 'paid' ? 0.6 : 1
-                          }}
-                          onMouseEnter={(e) => bill.status !== 'paid' && (e.currentTarget.style.background = '#fde68a')}
-                          onMouseLeave={(e) => (e.currentTarget.style.background = bill.status === 'paid' ? '#dcfce7' : '#fef3c7')}
-                          title="Mark as Paid"
-                        >
-                          <CheckCircle2 size={14} />
-                        </button>
+                        {bill.status === 'paid' ? (
+                          <span
+                            style={{
+                              padding: '0.5rem 0.75rem',
+                              background: '#dcfce7',
+                              borderRadius: '6px',
+                              color: '#166534',
+                              fontSize: '0.85rem',
+                              fontWeight: '600',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.375rem',
+                              border: '1px solid #bbf7d0'
+                            }}
+                          >
+                            <CheckCircle2 size={14} />
+                            Already Paid
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => markAsPaid(bill)}
+                            disabled={processingBillId === bill.id}
+                            style={{
+                              padding: '0.5rem 0.75rem',
+                              background: processingBillId === bill.id ? '#f1f5f9' : '#fef3c7',
+                              border: 'none',
+                              borderRadius: '6px',
+                              cursor: processingBillId === bill.id ? 'not-allowed' : 'pointer',
+                              color: processingBillId === bill.id ? '#94a3b8' : '#92400e',
+                              fontSize: '0.85rem',
+                              fontWeight: '600',
+                              transition: 'all 200ms',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.375rem',
+                              opacity: processingBillId === bill.id ? 0.6 : 1
+                            }}
+                            onMouseEnter={(e) => { if (processingBillId !== bill.id) (e.currentTarget as HTMLElement).style.background = '#fde68a'; }}
+                            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = processingBillId === bill.id ? '#f1f5f9' : '#fef3c7'; }}
+                            title="Mark as Paid"
+                          >
+                            <CheckCircle2 size={14} />
+                            {processingBillId === bill.id ? 'Saving...' : 'Mark Paid'}
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -426,7 +498,10 @@ export const Billing = () => {
             }}>Member *</label>
             <select
               value={formData.memberId}
-              onChange={e => setFormData({ ...formData, memberId: e.target.value })}
+              onChange={e => {
+                const m = members.find(mem => mem.id === e.target.value);
+                setFormData({ ...formData, memberId: e.target.value, amount: m ? m.amount : formData.amount });
+              }}
               style={{
                 width: '100%',
                 padding: '0.75rem',
@@ -470,7 +545,7 @@ export const Billing = () => {
             <input
               type="number"
               value={formData.amount || ''}
-              onChange={e => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
+              onChange={e => setFormData({ ...formData, amount: Math.round(parseFloat(e.target.value) || 0) })}
               style={{
                 width: '100%',
                 padding: '0.75rem',
@@ -479,7 +554,7 @@ export const Billing = () => {
                 fontSize: '0.95rem',
                 fontFamily: 'inherit'
               }}
-              placeholder="0"
+              placeholder=""
             />
           </div>
 
@@ -527,7 +602,7 @@ export const Billing = () => {
                 minHeight: '70px',
                 resize: 'none'
               }}
-              placeholder="Any additional notes..."
+              placeholder=""
             />
           </div>
 

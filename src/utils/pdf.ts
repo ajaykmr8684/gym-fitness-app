@@ -175,9 +175,6 @@ function createPDFContent(bill: any, member: any): string {
             Thank you for your membership!<br>
             For inquiries: ${BUSINESS_EMAIL} | ${BUSINESS_PHONE}
           </div>
-          <div class="footer">
-            All membership follow fixed pricing. No negotiations, non extendable & non-transferable.
-          </div>
         </div>
       </body>
     </html>

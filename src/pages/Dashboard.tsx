@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
-import { Users, FileText, AlertCircle, TrendingUp, Target, Activity, ArrowUp, Database } from 'lucide-react';
+import { Users, FileText, AlertCircle, TrendingUp, Target, Activity, ArrowUp, Database, AlertTriangle } from 'lucide-react';
 import { seedDatabase } from '../utils/seedData';
+import { formatDate } from '../utils/db';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 export const Dashboard = () => {
   const { members, bills, refreshData } = useAppContext();
+  const isMobile = useIsMobile();
   const [seeding, setSeeding] = useState(false);
   const [seedMessage, setSeedMessage] = useState('');
 
@@ -30,11 +33,11 @@ export const Dashboard = () => {
   const overdueAmount = bills.filter(b => b.status === 'overdue').reduce((sum, b) => sum + (b.amount - b.amountPaid), 0);
 
   return (
-    <div style={{display: 'flex', flexDirection: 'column', gap: '1.5rem'}}>
+    <div style={{display: 'flex', flexDirection: 'column', gap: isMobile ? '1rem' : '1.5rem'}}>
       {/* Professional Header - Company Name with Seed Button */}
 
       {/* Stats Cards - Fully Horizontal - ALL IN ONE ROW */}
-      <div style={{display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem'}}>
+      <div style={{display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: isMobile ? '0.75rem' : '1rem'}}>
         <StatCard 
           icon={Users}
           label="Active Members"
@@ -69,8 +72,40 @@ export const Dashboard = () => {
         />
       </div>
 
+      {/* Expiring Soon Alert */}
+      {(() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const in7days = new Date(today);
+        in7days.setDate(in7days.getDate() + 7);
+        const expiringSoon = members.filter(m => {
+          const expiry = new Date(m.expiryDate);
+          expiry.setHours(0, 0, 0, 0);
+          return expiry >= today && expiry <= in7days;
+        });
+        if (expiringSoon.length === 0) return null;
+        return (
+          <div style={{ background: '#fffbeb', border: '1px solid #fbbf24', borderRadius: '8px', padding: '1rem 1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+              <AlertTriangle size={18} color="#f59e0b" />
+              <span style={{ fontWeight: '700', color: '#92400e', fontSize: '0.95rem' }}>
+                {expiringSoon.length} membership{expiringSoon.length > 1 ? 's' : ''} expiring within 7 days
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              {expiringSoon.map(m => (
+                <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.75rem', background: 'white', border: '1px solid #fde68a', borderRadius: '6px', fontSize: '0.85rem' }}>
+                  <span style={{ fontWeight: '600', color: '#1e293b' }}>{m.name}</span>
+                  <span style={{ color: '#92400e' }}>· {formatDate(m.expiryDate)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Main Content - Compact & Horizontal */}
-      <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem'}}>
+      <div style={{display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: isMobile ? '1rem' : '1.5rem'}}>
         {/* Recent Members - Compact */}
         <div style={{
           background: 'white',

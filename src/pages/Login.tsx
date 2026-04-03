@@ -80,7 +80,7 @@ export const Login = () => {
                 type="text"
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
-                placeholder="Enter username"
+                placeholder=""
                 required
                 style={{ paddingLeft: '2.2rem' }}
               />
@@ -95,7 +95,7 @@ export const Login = () => {
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                placeholder="Enter password"
+                placeholder=""
                 required
                 style={{ paddingLeft: '2.2rem' }}
               />
